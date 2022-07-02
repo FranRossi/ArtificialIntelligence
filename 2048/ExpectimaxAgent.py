@@ -2,13 +2,6 @@ from Agent import Agent
 from GameBoard import GameBoard
 import numpy as np
 
-DEBUG = True
-# dirs = {
-#     0: "UP",
-#     1: "DOWN",
-#     2: "LEFT",
-#     3: "RIGHT"
-# }
 
 class ExpectimaxAgent(Agent):
     def init(self):
