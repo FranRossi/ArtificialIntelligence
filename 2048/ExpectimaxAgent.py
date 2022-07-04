@@ -2,16 +2,20 @@ from Agent import Agent
 from GameBoard import GameBoard
 import numpy as np
 
+EMPTY_WEIGHT = 500000
+SMOOTHNESS_WEIGHT = 3
 
 class ExpectimaxAgent(Agent):
-    def init(self):
+    def __init__(self, max_depth=4, heuristic="sum"):
+        self.heuristic_algorithm = heuristic
+        self.max_depth = max_depth
         pass
 
     def play(self, board:GameBoard):
-        best_move, _ = self.maximize(board)
+        best_move, _ = self.maximize_utility(board)
         return best_move
 
-    def maximize(self, board, depth = 0):
+    def maximize_utility(self, board, depth=0):
         moves = board.get_available_moves()
         moves_boards = []
 
@@ -20,34 +24,31 @@ class ExpectimaxAgent(Agent):
             m_board.move(m)
             moves_boards.append((m, m_board))
 
-        max_utility = (float('-inf'),0,0,0)
+        max_utility = float('-inf')
         best_direction = None
 
         for mb in moves_boards:
-            utility = self.chance(mb[1], depth + 1)
+            utility = self.utility_after_oponent_move(mb[1], depth + 1)
 
-            if utility[0] >= max_utility[0]:
+            if utility >= max_utility:
                 max_utility = utility
                 best_direction = mb[0]
 
         return best_direction, max_utility
 
-    def chance(self, board, depth = 0):
+    def utility_after_oponent_move(self, board, depth)->int:
         empty_cells = board.get_available_cells()
         n_empty = len(empty_cells)
 
-        #if n_empty >= 7 and depth >= 5:
-        #    return self.heuristic_utility(board, n_empty)
+        if depth >= self.max_depth:
+            return self.heuristic_utility(board)
 
         if n_empty >= 6 and depth >= 3:
             return self.heuristic_utility(board)
-
-        if n_empty >= 0 and depth >= 5:
-            return self.heuristic_utility(board)
-
+            
         if n_empty == 0:
-            utility = self.maximize(board, depth + 1)
-            return utility
+            _, utility = self.maximize(board, depth + 1)
+            return utility 
 
         possible_tiles = []
 
@@ -58,48 +59,47 @@ class ExpectimaxAgent(Agent):
             possible_tiles.append((empty_cell, 2, chance_2))
             possible_tiles.append((empty_cell, 4, chance_4))
 
-        avg_utility = [0, 0, 0, 0]
+        avg_utility = 0
 
         for t in possible_tiles:
             t_board = board.clone()
             t_board.insert_tile(t[0], t[1])
-            _, utility = self.maximize(t_board, depth + 1)
+            _, utility = self.maximize_utility(t_board, depth + 1)
 
-            for i in range(4):
-                avg_utility[i] += utility[i] # * t[2]
+            avg_utility += utility
 
-        for i in range(4):
-            avg_utility[i] /= len(possible_tiles)
+        avg_utility /= len(possible_tiles)
 
-        return tuple(avg_utility)
+        return avg_utility
 
     def heuristic_utility(self, board: GameBoard)->int:
+       
+        if (self.heuristic_algorithm == "smoothness"):
+            return self.get_smoothness(board)
+        elif (self.heuristic_algorithm == "value"):
+            return self.get_board_value(board)
+        elif (self.heuristic_algorithm == "empty"):
+            return self.get_empty_value(board)
+        
+        return self.get_smoothness(board) + self.get_board_value(board) + self.get_empty_value(board)
+
+    def get_smoothness(self, board:GameBoard)->int:
+        s_grid = np.sqrt(grid)
+        smoothness = 0
+        smoothness += np.sum(np.abs(s_grid[::,0] - s_grid[::,1]))
+        smoothness += np.sum(np.abs(s_grid[::,1] - s_grid[::,2]))
+        smoothness += np.sum(np.abs(s_grid[::,2] - s_grid[::,3]))
+        smoothness += np.sum(np.abs(s_grid[0,::] - s_grid[1,::]))
+        smoothness += np.sum(np.abs(s_grid[1,::] - s_grid[2,::]))
+        smoothness += np.sum(np.abs(s_grid[2,::] - s_grid[3,::]))
+        grid = board.grid
+        return - smoothness ** SMOOTHNESS_WEIGHT
+    
+    def get_board_value(self, board:GameBoard)->int:
+        return np.sum(np.power(board.grid, 2))
+
+    def get_empty_value(self, board:GameBoard)->int:
         empty_cells = board.get_available_cells()
         n_empty = len(empty_cells)
-        
-        grid = board.grid
 
-        utility = 0
-        smoothness = 0
-
-        big_t = np.sum(np.power(grid, 2))
-        s_grid = np.sqrt(grid)
-        smoothness -= np.sum(np.abs(s_grid[::,0] - s_grid[::,1]))
-        smoothness -= np.sum(np.abs(s_grid[::,1] - s_grid[::,2]))
-        smoothness -= np.sum(np.abs(s_grid[::,2] - s_grid[::,3]))
-        smoothness -= np.sum(np.abs(s_grid[0,::] - s_grid[1,::]))
-        smoothness -= np.sum(np.abs(s_grid[1,::] - s_grid[2,::]))
-        smoothness -= np.sum(np.abs(s_grid[2,::] - s_grid[3,::]))
-        
-        empty_w = 100000
-        smoothness_w = 3
-
-        empty_u = n_empty * empty_w
-        smooth_u = smoothness ** smoothness_w
-        big_t_u = big_t
-
-        utility += big_t
-        utility += empty_u
-        utility += smooth_u
-
-        return (utility, empty_u, smooth_u, big_t_u)
+        return EMPTY_WEIGHT * n_empty
