@@ -84,7 +84,7 @@ class ExpectimaxAgent(Agent):
         return self.get_smoothness(board) + self.get_board_value(board) + self.get_empty_value(board)
 
     def get_smoothness(self, board:GameBoard)->int:
-        s_grid = np.sqrt(grid)
+        s_grid = np.sqrt(board.grid)
         smoothness = 0
         smoothness += np.sum(np.abs(s_grid[::,0] - s_grid[::,1]))
         smoothness += np.sum(np.abs(s_grid[::,1] - s_grid[::,2]))
