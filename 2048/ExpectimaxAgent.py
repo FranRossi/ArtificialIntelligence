@@ -47,28 +47,29 @@ class ExpectimaxAgent(Agent):
             return self.heuristic_utility(board)
             
         if n_empty == 0:
-            _, utility = self.maximize(board, depth + 1)
-            return utility 
+            return self.heuristic_utility(board)
 
         possible_tiles = []
-
-        chance_2 = (.9 * (1 / n_empty))
-        chance_4 = (.1 * (1 / n_empty))
         
         for empty_cell in empty_cells:
-            possible_tiles.append((empty_cell, 2, chance_2))
-            possible_tiles.append((empty_cell, 4, chance_4))
+            possible_tiles.append((empty_cell, 2))
+            possible_tiles.append((empty_cell, 4))
 
-        avg_utility = 0
+        avg_utility_4, avg_utility_2, count_4, count_2 = 0, 0, 0, 0
 
         for t in possible_tiles:
             t_board = board.clone()
             t_board.insert_tile(t[0], t[1])
             _, utility = self.maximize_utility(t_board, depth + 1)
 
-            avg_utility += utility
+            if t[1] == 4:
+                avg_utility_4 += utility
+                count_4 += 1
+            else:
+                avg_utility_2 += utility
+                count_2 += 1
 
-        avg_utility /= len(possible_tiles)
+        avg_utility = .1 * (avg_utility_4 / count_4) + .9 * (avg_utility_2 / count_2)
 
         return avg_utility
 
@@ -92,7 +93,6 @@ class ExpectimaxAgent(Agent):
         smoothness += np.sum(np.abs(s_grid[0,::] - s_grid[1,::]))
         smoothness += np.sum(np.abs(s_grid[1,::] - s_grid[2,::]))
         smoothness += np.sum(np.abs(s_grid[2,::] - s_grid[3,::]))
-        grid = board.grid
         return - smoothness ** SMOOTHNESS_WEIGHT
     
     def get_board_value(self, board:GameBoard)->int:
