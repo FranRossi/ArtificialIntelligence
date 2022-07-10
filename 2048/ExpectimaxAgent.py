@@ -6,9 +6,9 @@ EMPTY_WEIGHT = 500000
 SMOOTHNESS_WEIGHT = 3
 
 class ExpectimaxAgent(Agent):
-    def __init__(self, max_depth=4, heuristic="sum"):
+    def __init__(self, depth=4, heuristic="sum"):
         self.heuristic_algorithm = heuristic
-        self.max_depth = max_depth
+        self.depth = depth
         pass
 
     def play(self, board:GameBoard):
@@ -16,6 +16,9 @@ class ExpectimaxAgent(Agent):
         return best_move
 
     def maximize_utility(self, board, depth=0):
+        if depth >= self.depth:
+            return 0, self.heuristic_utility(board)
+
         moves = board.get_available_moves()
         moves_boards = []
 
@@ -40,12 +43,10 @@ class ExpectimaxAgent(Agent):
         empty_cells = board.get_available_cells()
         n_empty = len(empty_cells)
 
-        if depth >= self.max_depth:
+        if depth >= self.depth:
             return self.heuristic_utility(board)
-
         if n_empty >= 6 and depth >= 3:
             return self.heuristic_utility(board)
-            
         if n_empty == 0:
             return self.heuristic_utility(board)
 
