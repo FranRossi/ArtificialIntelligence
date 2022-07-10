@@ -6,7 +6,7 @@ EMPTY_WEIGHT = 500000
 SMOOTHNESS_WEIGHT = 3
 
 class ExpectimaxAgent(Agent):
-    def __init__(self, depth=4, heuristic="sum"):
+    def __init__(self, depth=3, heuristic="sum"):
         self.heuristic_algorithm = heuristic
         self.depth = depth
         pass
